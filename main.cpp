@@ -5,12 +5,19 @@
 
 void patchOpenPipboy();
 bool versionCheck(const NVSEInterface* nvse);
+void handleIniOptions();
+
+HMODULE stewieTweakHandle;
+int g_bShowMessage = 1;
 
 extern "C" {
 
 	BOOL WINAPI DllMain(HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved) {
+		if (dwReason == DLL_PROCESS_ATTACH)
+			stewieTweakHandle = (HMODULE)hDllHandle;
 		return TRUE;
 	}
+
 
 	bool NVSEPlugin_Query(const NVSEInterface *nvse, PluginInfo *info) {
 		/* fill out the info structure */
@@ -18,6 +25,7 @@ extern "C" {
 		info->name = "No Pipboy In Combat";
 		info->version = 1;
 
+		handleIniOptions();
 		return versionCheck(nvse);
 	}
 
@@ -28,6 +36,13 @@ extern "C" {
 
 };
 
+void handleIniOptions() {
+	char filename[MAX_PATH];
+	GetModuleFileNameA(stewieTweakHandle, filename, MAX_PATH);
+	strcpy((char *)(strrchr(filename, '\\') + 1), "nvse_no_pipboy_in_combat.ini");
+	g_bShowMessage = GetPrivateProfileIntA("Main", "bShowMessage", 1, filename);
+}
+
 bool playerInDanger() {
 	PlayerCharacter* g_thePlayer = *(PlayerCharacter**)0x11DEA3C;
 	return g_thePlayer->pcInCombat && !g_thePlayer->pcUnseen;
@@ -36,7 +51,7 @@ bool playerInDanger() {
 __declspec(naked) void hookCheckDanger() {
 	static const UInt32 retnAddr = 0x0096766F;
 	if (playerInDanger()) {
-		QueueUIMessage("You cannot use your pipboy in combat!", 3, NULL, NULL, 1.0F, false);
+		if (g_bShowMessage) QueueUIMessage("You cannot use your pipboy in combat!", pain, NULL, NULL, 1.0F, false);
 		_asm {
 			mov edx, [ebp - 0x2C]
 			jmp  retnAddr
@@ -45,7 +60,7 @@ __declspec(naked) void hookCheckDanger() {
 	else {
 		_asm {
 			mov edx, [ebp - 0x2C]
-			mov byte ptr[edx + 0x00000D54], 01
+			mov byte ptr[edx + 0xD54], 01
 			jmp retnAddr
 		}
 	}
