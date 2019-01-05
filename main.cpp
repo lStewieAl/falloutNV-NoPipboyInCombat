@@ -12,6 +12,7 @@ int g_bShowMessage = 1;
 int g_bPipboyUseActionPoints = 0;
 int g_iPipboyAPCost = 50;
 
+/* credits to JazzIsParis */
 enum ActorValueCode
 {
 	kAVCode_Aggression,
@@ -134,6 +135,7 @@ bool __stdcall playerInDanger() {
 	return g_thePlayer->pcInCombat && !g_thePlayer->pcUnseen;
 }
 
+/* credits to JazzIsParis */
 __declspec(naked) float GetPCActionPoints() {
 	static const UInt32 kAddr_GetActorValue = 0x66EF50;
 	static PlayerCharacter* g_thePlayer = *(PlayerCharacter**)0x11DEA3C;
